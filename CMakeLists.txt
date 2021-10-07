@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(ros_trees_examples)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  actionlib_msgs
+  message_generation)
 
 # add_message_files(
 #   FILES
@@ -15,22 +17,19 @@ find_package(catkin REQUIRED)
 #   Service2.srv
 # )
 
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  ActuateGripper.action
+  )
 
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  actionlib_msgs
+  std_msgs
+  )
 
 catkin_package(
-  #  INCLUDE_DIRS include
-  #  LIBRARIES ros_trees_examples
-  #  CATKIN_DEPENDS other_catkin_pkg
-  #  DEPENDS system_lib
+  CATKIN_DEPENDS message_runtime
   )
 
 include_directories(

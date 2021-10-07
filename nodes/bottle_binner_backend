@@ -11,13 +11,6 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 import sys
 
-from ros_msgs.msg import (ActuateGripperAction, ActuateGripperGoal,
-                         ActuateGripperResult, MoveToNamedPoseAction,
-                         MoveToNamedPoseResult, MoveToPoseAction,
-                         MoveToPoseResult, Object)
-from ros_msgs.srv import (GetSyncedImages, GetSyncedImagesResponse, FindObjects,
-                         FindObjectsResponse)
-
 
 class DummyBottleBinnerBackend(object):
     IMAGE_WIDTH = 640
@@ -87,13 +80,13 @@ class DummyBottleBinnerBackend(object):
             xy = (randint(0, self.IMAGE_WIDTH - wh[0]),
                   randint(0, self.IMAGE_HEIGHT - wh[1]))  # (x, y)
             depth = ros_numpy.msgify(Image,
-                                     depth_image[xy[1]:xy[1] +
-                                                 wh[1], xy[0]:xy[0] + wh[0]],
+                                     depth_image[xy[1]:xy[1] + wh[1],
+                                                 xy[0]:xy[0] + wh[0]],
                                      encoding='mono8')
             depth.header.frame_id = req.input_depth_image.header.frame_id
             rgb = ros_numpy.msgify(Image,
-                                   rgb_image[xy[1]:xy[1] + wh[1], xy[0]:xy[0] +
-                                             wh[0], :],
+                                   rgb_image[xy[1]:xy[1] + wh[1],
+                                             xy[0]:xy[0] + wh[0], :],
                                    encoding='rgb8')
             rgb.header.frame_id = req.input_rgb_image.header.frame_id
             objects.append(
