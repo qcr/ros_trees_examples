@@ -3,28 +3,34 @@ project(ros_trees_examples)
 
 find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
-  message_generation)
+  geometry_msgs
+  message_generation
+  sensor_msgs
+  )
 
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  Object.msg
+  )
 
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  FindObjects.srv
+  GetSyncedImages.srv
+  )
 
 add_action_files(
   FILES
   ActuateGripper.action
+  MoveToNamedPose.action
+  MoveToPose.action
   )
 
 generate_messages(
   DEPENDENCIES
   actionlib_msgs
+  geometry_msgs
+  sensor_msgs
   std_msgs
   )
 
