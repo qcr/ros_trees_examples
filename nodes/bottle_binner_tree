@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 from py_trees.composites import Sequence
@@ -206,8 +206,8 @@ def pose_from_object(leaf):
 
     # Derive pose from depth of detection midpoint, & dumb FOV angle division
     cropped_depth = ros_numpy.numpify(object_msg.cropped_depth)
-    r = 0.01 * cropped_depth[cropped_depth.shape[0] //
-                             2, cropped_depth.shape[1] // 2]
+    r = 0.01 * cropped_depth[cropped_depth.shape[0] // 2,
+                             cropped_depth.shape[1] // 2]
     angles = _FOVS * (
         (np.array([object_msg.x_left, object_msg.y_top]) + 0.5 *
          np.array([object_msg.width, object_msg.height])) / _IMAGE_DIMS - 0.5)
