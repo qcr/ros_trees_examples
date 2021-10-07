@@ -2,7 +2,6 @@
 from __future__ import print_function
 
 import actionlib
-import cv_bridge
 import numpy as np
 from random import randint
 import ros_numpy
@@ -22,8 +21,6 @@ class DummyBottleBinnerBackend(object):
     IMAGE_HEIGHT = 480
 
     def __init__(self):
-        self._bridge = cv_bridge.CvBridge()
-
         # Startup all of our fake services...
         self._actuate_gripper_as = actionlib.SimpleActionServer(
             '/action/actuate_gripper',
