@@ -13,7 +13,8 @@ import sys
 from ros_trees_examples.msg import (ActuateGripperAction, ActuateGripperGoal,
                                     ActuateGripperResult,
                                     MoveToNamedPoseAction, MoveToPoseAction)
-from ros_trees_examples.srv import FindObjects, GetSyncedImages
+from ros_trees_examples.srv import (FindObjects, GetSyncedImages,
+                                    GetSyncedImagesResponse)
 
 
 class DummyBottleBinnerBackend(object):
@@ -58,19 +59,12 @@ class DummyBottleBinnerBackend(object):
         print("Done")
 
     def cb_actuate_gripper(self, goal):
-        # Print some dummy output
-        success = (goal.mode == ActuateGripperGoal.MODE_STATIC)
-        if success:
-            self._print_dramatic(
-                "%s gripper" %
-                ("Opening" if goal.state == ActuateGripperGoal.STATE_OPEN else
-                 "Closing"), 0.5)
-        else:
-            print("Doing something with the gripper I'm not expecting... ")
-
-        # Return an appropriate result
-        (self._actuate_gripper_as.set_succeeded if success else
-         self._actuate_gripper_as.set_aborted)(ActuateGripperResult())
+        # Print some dummy output, & return an appropriate result
+        self._print_dramatic(
+            "%s gripper" % ("Opening" if goal.state
+                            == ActuateGripperGoal.STATE_OPEN else "Closing"),
+            0.5)
+        self._actuate_gripper_as.set_succeeded(ActuateGripperResult())
 
     def cb_detect_bottles(self, req):
         # Generate some random detections within the images...
