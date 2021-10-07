@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ros_trees_examples</name>
+  <version>0.0.0</version>
+  <description>The ros_trees_examples package</description>
+
+  <author>Ben Talbot</author>
+  <maintainer email="b.talbot@qut.edu.au">Ben Talbot</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>ros_trees</exec_depend>
+
+  <export>
+  </export>
+</package>
