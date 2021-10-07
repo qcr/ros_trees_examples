@@ -1,25 +1,20 @@
 #!/usr/bin/env python3
 
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
 import numpy as np
 from py_trees.composites import Sequence
 from py_trees.decorators import FailureIsSuccess, SuccessIsRunning
 from random import randint
 import ros_numpy
 import rospy
-
-from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
 from std_msgs.msg import Header
 
-from ros_msgs.msg import ActuateGripperGoal
 import ros_trees.data_management as dm
 from ros_trees.leaves import Leaf
 from ros_trees.leaves_ros import ActionLeaf, ServiceLeaf
 from ros_trees.trees import BehaviourTree
 
-try:
-    input = raw_input
-except NameError:
-    pass
+from ros_trees_examples.msg import ActuateGripperGoal
 
 ################################################################################
 ############################### Leaf definitions ###############################
@@ -36,8 +31,7 @@ class _ActuateGripper(ActionLeaf):
 
 
 class CloseGripper(_ActuateGripper):
-    CLOSE_GOAL = ActuateGripperGoal(mode=ActuateGripperGoal.MODE_STATIC,
-                                    state=ActuateGripperGoal.STATE_CLOSED)
+    CLOSE_GOAL = ActuateGripperGoal(state=ActuateGripperGoal.STATE_CLOSED)
 
     def __init__(self, *args, **kwargs):
         super(CloseGripper, self).__init__("Close Gripper",
@@ -89,8 +83,7 @@ class MoveGripperToLocation(ActionLeaf):
 
 
 class OpenGripper(_ActuateGripper):
-    OPEN_GOAL = ActuateGripperGoal(mode=ActuateGripperGoal.MODE_STATIC,
-                                   state=ActuateGripperGoal.STATE_OPEN)
+    OPEN_GOAL = ActuateGripperGoal(state=ActuateGripperGoal.STATE_OPEN)
 
     def __init__(self, *args, **kwargs):
         super(OpenGripper, self).__init__("Open Gripper",
