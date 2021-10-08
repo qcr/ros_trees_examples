@@ -11,9 +11,11 @@ import sys
 
 from ros_trees_examples.msg import (ActuateGripperAction, ActuateGripperGoal,
                                     ActuateGripperResult,
-                                    MoveToNamedPoseAction, MoveToPoseAction)
-from ros_trees_examples.srv import (FindObjects, GetSyncedImages,
-                                    GetSyncedImagesResponse)
+                                    MoveToNamedPoseAction,
+                                    MoveToNamedPoseResult, MoveToPoseAction,
+                                    MoveToPoseResult, Object)
+from ros_trees_examples.srv import (FindObjects, FindObjectsResponse,
+                                    GetSyncedImages, GetSyncedImagesResponse)
 
 
 class DummyBottleBinnerBackend(object):
