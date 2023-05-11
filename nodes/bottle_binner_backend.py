@@ -1,54 +1,40 @@
 #!/usr/bin/env python3
 
-import actionlib
-import numpy as np
+import sys
 from random import randint
-import ros_numpy
-import rospy
+from time import sleep
+import numpy as np
+
+import rclpy
+from rclpy.action import ActionServer
+from rclpy.node import Node
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
-import sys
+import ros2_numpy
 
-from ros_trees_examples.msg import (ActuateGripperAction, ActuateGripperGoal,
-                                    ActuateGripperResult,
-                                    MoveToNamedPoseAction,
-                                    MoveToNamedPoseResult, MoveToPoseAction,
-                                    MoveToPoseResult, Object)
-from ros_trees_examples.srv import (FindObjects, FindObjectsResponse,
-                                    GetSyncedImages, GetSyncedImagesResponse)
+from ros_trees_examples.action import ActuateGripper, MoveToNamedPose, MoveToPose
+from ros_trees_examples.msg import Object
+from ros_trees_examples.srv import FindObjects, GetSyncedImages
 
 
-class DummyBottleBinnerBackend(object):
+class DummyBottleBinnerBackend(Node):
     IMAGE_WIDTH = 640
     IMAGE_HEIGHT = 480
 
     def __init__(self):
-        # Startup all of our fake services...
-        self._actuate_gripper_as = actionlib.SimpleActionServer(
-            '/action/actuate_gripper',
-            ActuateGripperAction,
-            self.cb_actuate_gripper,
-            auto_start=False)
-        self._detect_bottles_service = rospy.Service('/service/detect_bottles',
-                                                     FindObjects,
-                                                     self.cb_detect_bottles)
-        self._synced_rgbd_service = rospy.Service('/service/get_synced_rgbd',
-                                                  GetSyncedImages,
-                                                  self.cb_get_synced_rgbd)
-        self._move_gripper_location_as = actionlib.SimpleActionServer(
-            '/action/move_gripper/location',
-            MoveToNamedPoseAction,
-            self.cb_move_gripper_location,
-            auto_start=False)
-        self._move_gripper_pose_as = actionlib.SimpleActionServer(
-            '/action/move_gripper/pose',
-            MoveToPoseAction,
-            self.cb_move_gripper_pose,
-            auto_start=False)
+        super().__init__('dummy_bottle_binner_backend')
 
-        self._actuate_gripper_as.start()
-        self._move_gripper_location_as.start()
-        self._move_gripper_pose_as.start()
+        # Startup all of our fake services...
+        self._actuate_gripper_as = ActionServer(
+            self, ActuateGripper, '/action/actuate_gripper', self.cb_actuate_gripper)
+        self._detect_bottles_service = self.create_service(
+            FindObjects, '/service/detect_bottles', self.cb_detect_bottles)
+        self._synced_rgbd_service = self.create_service(
+            GetSyncedImages, '/service/get_synced_rgbd', self.cb_get_synced_rgbd)
+        self._move_gripper_location_as = ActionServer(
+            self, MoveToNamedPose, '/action/move_gripper/location', self.cb_move_gripper_location)
+        self._move_gripper_pose_as = ActionServer(
+            self, MoveToPose, '/action/move_gripper/pose', self.cb_move_gripper_pose)
 
         print("All dummy services are now running...")
 
@@ -56,32 +42,32 @@ class DummyBottleBinnerBackend(object):
     def _print_dramatic(string, delay):
         print(string + " ... ", end="")
         sys.stdout.flush()
-        rospy.sleep(delay)
+        sleep(delay)
         print("Done")
 
     def cb_actuate_gripper(self, goal):
         # Print some dummy output, & return an appropriate result
         self._print_dramatic(
             "%s gripper" % ("Opening" if goal.state
-                            == ActuateGripperGoal.STATE_OPEN else "Closing"),
+                            == ActuateGripper.Goal.STATE_OPEN else "Closing"),
             0.5)
-        self._actuate_gripper_as.set_succeeded(ActuateGripperResult())
+        self._actuate_gripper_as.set_succeeded(ActuateGripper.Result())
 
     def cb_detect_bottles(self, req):
         # Generate some random detections within the images...
-        depth_image = ros_numpy.numpify(req.input_depth_image)
-        rgb_image = ros_numpy.numpify(req.input_rgb_image)
+        depth_image = ros2_numpy.numpify(req.input_depth_image)
+        rgb_image = ros2_numpy.numpify(req.input_rgb_image)
         objects = []
         for _ in range(0, randint(1, 5)):
             wh = (randint(5, 50), randint(5, 50))  # (w, h)
             xy = (randint(0, self.IMAGE_WIDTH - wh[0]),
                   randint(0, self.IMAGE_HEIGHT - wh[1]))  # (x, y)
-            depth = ros_numpy.msgify(Image,
+            depth = ros2_numpy.msgify(Image,
                                      depth_image[xy[1]:xy[1] + wh[1],
                                                  xy[0]:xy[0] + wh[0]],
                                      encoding='mono8')
             depth.header.frame_id = req.input_depth_image.header.frame_id
-            rgb = ros_numpy.msgify(Image,
+            rgb = ros2_numpy.msgify(Image,
                                    rgb_image[xy[1]:xy[1] + wh[1],
                                              xy[0]:xy[0] + wh[0], :],
                                    encoding='rgb8')
@@ -95,26 +81,26 @@ class DummyBottleBinnerBackend(object):
                        cropped_depth=depth,
                        cropped_rgb=rgb))
         self._print_dramatic("Detecting bottles", 0.1)
-        return FindObjectsResponse(objects=objects)
+        return FindObjects.Response(objects=objects)
 
     def cb_get_synced_rgbd(self, req):
         # Return a response with some dummy images
         self._print_dramatic("Getting synced RGBD", 0.1)
-        depth_msg = ros_numpy.msgify(
+        depth_msg = ros2_numpy.msgify(
             Image,
             np.random.randint(100, 255,
                               (self.IMAGE_HEIGHT, self.IMAGE_WIDTH)).astype(
                                   np.uint8),
             encoding='mono8')
         depth_msg.header.frame_id = req.camera_namespace
-        rgb_msg = ros_numpy.msgify(
+        rgb_msg = ros2_numpy.msgify(
             Image,
             np.random.randint(0, 255,
                               (self.IMAGE_HEIGHT, self.IMAGE_WIDTH, 3)).astype(
                                   np.uint8),
             encoding='rgb8')
         rgb_msg.header.frame_id = req.camera_namespace
-        return GetSyncedImagesResponse(synced_depth_image=depth_msg,
+        return GetSyncedImages.Response(synced_depth_image=depth_msg,
                                        synced_rgb_image=rgb_msg)
 
     def cb_move_gripper_location(self, goal):
@@ -128,7 +114,7 @@ class DummyBottleBinnerBackend(object):
 
         # Return an appropriate result
         (self._move_gripper_location_as.set_succeeded if success else
-         self._move_gripper_location_as.set_aborted)(MoveToNamedPoseResult())
+         self._move_gripper_location_as.set_aborted)(MoveToNamedPose.Result())
 
     def cb_move_gripper_pose(self, goal):
         pos = goal.goal_pose.pose.position
@@ -137,10 +123,16 @@ class DummyBottleBinnerBackend(object):
             (pos.x, pos.y, pos.z, goal.goal_pose.header.frame_id), 5)
 
         # Return an appropriate result
-        self._move_gripper_pose_as.set_succeeded(MoveToPoseResult())
+        self._move_gripper_pose_as.set_succeeded(MoveToPose.Result())
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    dbbs = DummyBottleBinnerBackend()
+    rclpy.spin(dbbs)
+    dbbs.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':
-    rospy.init_node("dummy_bottle_binner_backend")
-    dbbs = DummyBottleBinnerBackend()
-    rospy.spin()
+    main()
