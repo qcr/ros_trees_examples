@@ -1,3 +1,4 @@
 <launch>
+    <node name="bottle_binner_backend" pkg="ros_trees_examples" exec="bottle_binner_backend.py" output="screen" />
     <node name="bottle_binner_tree" pkg="ros_trees_examples" exec="bottle_binner_tree.py" output="screen" />
 </launch>

@@ -263,5 +263,13 @@ if __name__ == '__main__':
             WaitForEnterKey(load_value="All bottles binned! Press enter to restart ... ")]
         )
     )
-    tree.run()
+
+    if not tree.run():
+        rclpy.shutdown()
+        exit(1)
+    
     rclpy.spin(tree.node)
+
+    print("Complete... Exiting!")
+    rclpy.shutdown()
+    exit(0)

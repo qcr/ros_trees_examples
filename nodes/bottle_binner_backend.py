@@ -53,10 +53,10 @@ class DummyBottleBinnerBackend(Node):
             0.5)
         self._actuate_gripper_as.set_succeeded(ActuateGripper.Result())
 
-    def cb_detect_bottles(self, req):
+    def cb_detect_bottles(self, request, response):
         # Generate some random detections within the images...
-        depth_image = ros2_numpy.numpify(req.input_depth_image)
-        rgb_image = ros2_numpy.numpify(req.input_rgb_image)
+        depth_image = ros2_numpy.numpify(request.input_depth_image)
+        rgb_image = ros2_numpy.numpify(request.input_rgb_image)
         objects = []
         for _ in range(0, randint(1, 5)):
             wh = (randint(5, 50), randint(5, 50))  # (w, h)
@@ -66,12 +66,12 @@ class DummyBottleBinnerBackend(Node):
                                      depth_image[xy[1]:xy[1] + wh[1],
                                                  xy[0]:xy[0] + wh[0]],
                                      encoding='mono8')
-            depth.header.frame_id = req.input_depth_image.header.frame_id
+            depth.header.frame_id = request.input_depth_image.header.frame_id
             rgb = ros2_numpy.msgify(Image,
                                    rgb_image[xy[1]:xy[1] + wh[1],
                                              xy[0]:xy[0] + wh[0], :],
                                    encoding='rgb8')
-            rgb.header.frame_id = req.input_rgb_image.header.frame_id
+            rgb.header.frame_id = request.input_rgb_image.header.frame_id
             objects.append(
                 Object(class_label='bottle',
                        x_left=xy[0],
@@ -81,9 +81,10 @@ class DummyBottleBinnerBackend(Node):
                        cropped_depth=depth,
                        cropped_rgb=rgb))
         self._print_dramatic("Detecting bottles", 0.1)
-        return FindObjects.Response(objects=objects)
+        response.objects = objects
+        return response
 
-    def cb_get_synced_rgbd(self, req):
+    def cb_get_synced_rgbd(self, request, response):
         # Return a response with some dummy images
         self._print_dramatic("Getting synced RGBD", 0.1)
         depth_msg = ros2_numpy.msgify(
@@ -92,16 +93,17 @@ class DummyBottleBinnerBackend(Node):
                               (self.IMAGE_HEIGHT, self.IMAGE_WIDTH)).astype(
                                   np.uint8),
             encoding='mono8')
-        depth_msg.header.frame_id = req.camera_namespace
+        depth_msg.header.frame_id = request.camera_namespace
         rgb_msg = ros2_numpy.msgify(
             Image,
             np.random.randint(0, 255,
                               (self.IMAGE_HEIGHT, self.IMAGE_WIDTH, 3)).astype(
                                   np.uint8),
             encoding='rgb8')
-        rgb_msg.header.frame_id = req.camera_namespace
-        return GetSyncedImages.Response(synced_depth_image=depth_msg,
-                                       synced_rgb_image=rgb_msg)
+        rgb_msg.header.frame_id = request.camera_namespace
+        response.synced_depth_image = depth_msg
+        response.synced_rgb_image = rgb_msg
+        return response
 
     def cb_move_gripper_location(self, goal):
         success = goal.pose_name in ['bin', 'workspace']
