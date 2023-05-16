@@ -3,6 +3,7 @@ project(ros_trees_examples)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 find_package(rclpy REQUIRED)
@@ -25,8 +26,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 ament_export_dependencies(rosidl_default_runtime)
 
 install(PROGRAMS
-  nodes/bottle_binner_backend.py
-  nodes/bottle_binner_tree.py
+  ${PROJECT_NAME}/bottle_binner_backend.py
+  ${PROJECT_NAME}/bottle_binner_tree.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -34,5 +35,8 @@ install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}
 )
+
+ament_export_dependencies(ament_cmake)
+ament_export_dependencies(ament_cmake_python)
 
 ament_package()
