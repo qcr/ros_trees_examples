@@ -1,44 +1,42 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(ros_trees_examples)
 
-find_package(catkin REQUIRED COMPONENTS
-  actionlib_msgs
-  geometry_msgs
-  message_generation
-  sensor_msgs
-  )
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
-add_message_files(
-  FILES
-  Object.msg
-  )
+find_package(rclpy REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
-add_service_files(
-  FILES
-  FindObjects.srv
-  GetSyncedImages.srv
-  )
-
-add_action_files(
-  FILES
-  ActuateGripper.action
-  MoveToNamedPose.action
-  MoveToPose.action
-  )
-
-generate_messages(
+## Generate actions, messages and services
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/ActuateGripper.action"
+  "action/MoveToNamedPose.action"
+  "action/MoveToPose.action"
+  "msg/Object.msg"
+  "srv/FindObjects.srv"
+  "srv/GetSyncedImages.srv"
   DEPENDENCIES
-  actionlib_msgs
   geometry_msgs
   sensor_msgs
-  std_msgs
-  )
+)
 
-catkin_package(
-  CATKIN_DEPENDS message_runtime
-  )
+ament_export_dependencies(rosidl_default_runtime)
 
-include_directories(
-  # include
-  # ${catkin_INCLUDE_DIRS}
-  )
+install(PROGRAMS
+  ${PROJECT_NAME}/bottle_binner_backend.py
+  ${PROJECT_NAME}/bottle_binner_tree.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+ament_export_dependencies(ament_cmake)
+ament_export_dependencies(ament_cmake_python)
+
+ament_package()

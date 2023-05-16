@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 
-from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
 import numpy as np
+from random import randint
 from py_trees.composites import Sequence
 from py_trees.decorators import FailureIsSuccess, SuccessIsRunning
-from random import randint
-import ros_numpy
-import rospy
+
+import rclpy
+from rclpy.node import Node
 from std_msgs.msg import Header
+import ros2_numpy
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
 
 import ros_trees.data_management as dm
 from ros_trees.leaves import Leaf
 from ros_trees.leaves_ros import ActionLeaf, ServiceLeaf
 from ros_trees.trees import BehaviourTree
 
-from ros_trees_examples.msg import ActuateGripperGoal
+from ros_trees_examples.action import ActuateGripper, MoveToNamedPose, MoveToPose
+from ros_trees_examples.srv import FindObjects, GetSyncedImages
 
 ################################################################################
 ############################### Leaf definitions ###############################
@@ -24,81 +27,89 @@ from ros_trees_examples.msg import ActuateGripperGoal
 class _ActuateGripper(ActionLeaf):
 
     def __init__(self, *args, **kwargs):
-        super(_ActuateGripper,
-              self).__init__(action_namespace='/action/actuate_gripper',
-                             *args,
-                             **kwargs)
+        super(_ActuateGripper, self).__init__(
+            action_namespace='/action/actuate_gripper',
+            action_class=ActuateGripper,
+            *args,
+            **kwargs)
 
 
 class CloseGripper(_ActuateGripper):
-    CLOSE_GOAL = ActuateGripperGoal(state=ActuateGripperGoal.STATE_CLOSED)
+    CLOSE_GOAL = ActuateGripper.Goal(state=ActuateGripper.Goal.STATE_CLOSED)
 
     def __init__(self, *args, **kwargs):
-        super(CloseGripper, self).__init__("Close Gripper",
-                                           load_value=CloseGripper.CLOSE_GOAL,
-                                           *args,
-                                           **kwargs)
+        super(CloseGripper, self).__init__(
+            name="Close Gripper",
+            load_value=CloseGripper.CLOSE_GOAL,
+            *args,
+            **kwargs)
 
 
 class GetSyncedRgbd(ServiceLeaf):
 
     def __init__(self, *args, **kwargs):
-        super(GetSyncedRgbd,
-              self).__init__("Get Synced RGBD",
-                             service_name='/service/get_synced_rgbd',
-                             save=True,
-                             *args,
-                             **kwargs)
+        super(GetSyncedRgbd, self).__init__(
+            name="Get Synced RGBD",
+            service_name='/service/get_synced_rgbd',
+            service_class=GetSyncedImages,
+            save=True,
+            *args,
+            **kwargs)
 
 
 class DetectBottles(ServiceLeaf):
 
     def __init__(self, *args, **kwargs):
-        super(DetectBottles,
-              self).__init__("Detect bottles",
-                             service_name='/service/detect_bottles',
-                             save=True,
-                             *args,
-                             **kwargs)
+        super(DetectBottles,self).__init__(
+            name="Detect bottles",
+            service_name='/service/detect_bottles',
+            service_class=FindObjects,
+            save=True,
+            *args,
+            **kwargs)
 
 
 class MoveGripperToPose(ActionLeaf):
 
     def __init__(self, *args, **kwargs):
-        super(MoveGripperToPose,
-              self).__init__("Move gripper to pose",
-                             action_namespace='/action/move_gripper/pose',
-                             *args,
-                             **kwargs)
+        super(MoveGripperToPose, self).__init__(
+            name="Move gripper to pose",
+            action_namespace='/action/move_gripper/pose',
+            action_class=MoveToPose,
+            *args,
+            **kwargs)
 
 
 class MoveGripperToLocation(ActionLeaf):
 
     def __init__(self, *args, **kwargs):
-        super(MoveGripperToLocation,
-              self).__init__("Move gripper to location",
-                             action_namespace='/action/move_gripper/location',
-                             *args,
-                             **kwargs)
+        super(MoveGripperToLocation, self).__init__(
+            name="Move gripper to location",
+            action_namespace='/action/move_gripper/location',
+            action_class=MoveToNamedPose,
+            *args,
+            **kwargs)
 
 
 class OpenGripper(_ActuateGripper):
-    OPEN_GOAL = ActuateGripperGoal(state=ActuateGripperGoal.STATE_OPEN)
+    OPEN_GOAL = ActuateGripper.Goal(state=ActuateGripper.Goal.STATE_OPEN)
 
     def __init__(self, *args, **kwargs):
-        super(OpenGripper, self).__init__("Open Gripper",
-                                          load_value=OpenGripper.OPEN_GOAL,
-                                          *args,
-                                          **kwargs)
+        super(OpenGripper, self).__init__(
+            name="Open Gripper",
+            load_value=OpenGripper.OPEN_GOAL,
+            *args,
+            **kwargs)
 
 
 class PopFromList(Leaf):
 
     def __init__(self, pop_position=0, *args, **kwargs):
-        super(PopFromList, self).__init__("Pop from list",
-                                          result_fn=self._pop_item,
-                                          *args,
-                                          **kwargs)
+        super(PopFromList, self).__init__(
+            name="Pop from list",
+            result_fn=self._pop_item,
+            *args,
+            **kwargs)
         self.pop_position = pop_position
 
     def _pop_item(self):
@@ -115,10 +126,11 @@ class PopFromList(Leaf):
 class Print(Leaf):
 
     def __init__(self, *args, **kwargs):
-        super(Print, self).__init__("Print",
-                                    result_fn=self._print,
-                                    *args,
-                                    **kwargs)
+        super(Print, self).__init__(
+            name="Print",
+            result_fn=self._print,
+            *args,
+            **kwargs)
 
     def _print(self):
         print(self.loaded_data)
@@ -128,10 +140,11 @@ class Print(Leaf):
 class PrintObjects(Leaf):
 
     def __init__(self, *args, **kwargs):
-        super(PrintObjects, self).__init__("Print Objects",
-                                           result_fn=self._print_objects,
-                                           *args,
-                                           **kwargs)
+        super(PrintObjects, self).__init__(
+            name="Print Objects",
+            result_fn=self._print_objects,
+            *args,
+            **kwargs)
 
     def _print_objects(self):
         if self.loaded_data is None or not self.loaded_data:
@@ -152,10 +165,11 @@ class PrintObjects(Leaf):
 class WaitForEnterKey(Leaf):
 
     def __init__(self, *args, **kwargs):
-        super(WaitForEnterKey, self).__init__("Wait for Enter Key",
-                                              result_fn=self._wait_for_enter,
-                                              *args,
-                                              **kwargs)
+        super(WaitForEnterKey, self).__init__(
+            name="Wait for Enter Key",
+            result_fn=self._wait_for_enter,
+            *args,
+            **kwargs)
 
     def _wait_for_enter(self):
         # NOTE: this is blocking within a leaf ... typically BAD
@@ -198,7 +212,7 @@ def pose_from_object(leaf):
     object_msg = super(ActionLeaf, leaf)._default_load_fn()
 
     # Derive pose from depth of detection midpoint, & dumb FOV angle division
-    cropped_depth = ros_numpy.numpify(object_msg.cropped_depth)
+    cropped_depth = ros2_numpy.numpify(object_msg.cropped_depth)
     r = 0.01 * cropped_depth[cropped_depth.shape[0] // 2,
                              cropped_depth.shape[1] // 2]
     angles = _FOVS * (
@@ -221,26 +235,41 @@ def pose_from_object(leaf):
                             breakdown=False)
 
 
+
 if __name__ == '__main__':
-    rospy.init_node("bottle_binner_tree")
-    BehaviourTree(
-        "Bottle Binner",
-        Sequence("Bin Bottles", [
+    rclpy.init()
+
+    # Behaviour tree is itself a Node... Ensure it is spun after setup.
+    tree = BehaviourTree("Bottle Binner",
+        Sequence("Bin Bottles", children=[
             GetSyncedRgbd(load_value='camera_wrist'),
-            DetectBottles(save_key='bottles',
-                          save_fn=object_list_from_response),
+            DetectBottles(save_key='bottles', save_fn=object_list_from_response),
             PrintObjects(load_key='bottles'),
             FailureIsSuccess(
                 name="F=S",
                 child=SuccessIsRunning(
                     name="S=R",
-                    child=Sequence("Bin bottle", [
-                        PopFromList(load_key='bottles', save_key='bottle'),
-                        Print(load_value="Binning bottle..."),
-                        BinItem(load_pose_fn=pose_from_object,
+                    child=Sequence("Bin bottle", children=[
+                            PopFromList(load_key='bottles', save_key='bottle'),
+                            Print(load_value="Binning bottle..."),
+                            BinItem(
+                                load_pose_fn=pose_from_object,
                                 load_pose_key='bottle'),
-                        Print(load_value="Successfully binned bottle!")
-                    ]))),
-            WaitForEnterKey(
-                load_value="All bottles binned! Press enter to restart ... ")
-        ])).run()
+                            Print(load_value="Successfully binned bottle!")
+                        ]
+                    )
+                )
+            ),
+            WaitForEnterKey(load_value="All bottles binned! Press enter to restart ... ")]
+        )
+    )
+
+    if not tree.run():
+        rclpy.shutdown()
+        exit(1)
+    
+    rclpy.spin(tree.node)
+
+    print("Complete... Exiting!")
+    rclpy.shutdown()
+    exit(0)
